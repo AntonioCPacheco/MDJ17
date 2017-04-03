@@ -10,6 +10,7 @@ public class RoomGenerator : MonoBehaviour {
     Color[,] mapArray;
     PolygonCollider2D pc2;
     public GameObject wallPrefab, gatePrefab;
+    public float increment = 0.5f;
 
     // Use this for initialization
     void Start ()
@@ -40,28 +41,51 @@ public class RoomGenerator : MonoBehaviour {
 
     void ProcessMap()
     {
-        for (int x = 0; x < map.width; x++)
+        //if (pc2.points.IsFixedSize) throw new System.Exception("Fixed size");
+        int xWay = 1;
+        int yWay = 0;
+        for (int x = 0, y = 0; xWay != 0 || yWay != 0 ; x+=xWay, y+=yWay)
         {
-            for (int y = 0; y < map.height; y++)
-            {
-                if (mapArray[x, y].Equals(Color.black))
-                    ProcessWall(x, y);
-                else if (mapArray[x, y].Equals(Color.white))
-                {
-                    ProcessGate(x, y);
-                }
-            }
+            if(mapArray[x, y].Equals(Color.black))
+                pc2.points[pc2.points.Length] = new Vector2(x + xWay*increment, y + yWay * increment);
+            else
+                pc2.points[pc2.points.Length] = new Vector2(x - xWay * increment, y - yWay * increment);
         }
+                /*
+                for (int x = 0; x < map.width; x++)
+                {
+                    for (int y = 0; y < map.height; y++)
+                    {
+                        if (mapArray[x, y].Equals(Color.black))
+                        {
+                            int i;
+                            for (i = y; i < map.height; i++)
+                            {
+                                if (!mapArray[x, i].Equals(Color.black) || i==map.height-1)
+                                {
+                                    ProcessWall(x, y, i-(i==map.height-1?0:1));
+                                    y = i;
+                                    break;
+                                }
+                            }
+
+                        }
+                        else if (mapArray[x, y].Equals(Color.white))
+                        {
+                            ProcessGate(x, y);
+                        }
+                    }
+                }*/
     }
 
-    void ProcessWall(int x, int y)
+    void ProcessWall(int x1, int y1, int y2)
     {
         Vector2[] newPixel = new Vector2[]
         {
-            new Vector2(x, y),
-            new Vector2(x+1, y),
-            new Vector2(x+1, y+1),
-            new Vector2(x, y+1)
+            new Vector2(x1, y1),
+            new Vector2(x1+1, y1),
+            new Vector2(x1+1, y2+1),
+            new Vector2(x1, y2+1)
         };
         GameObject newGO = Instantiate(wallPrefab);
         newGO.transform.parent = transform;

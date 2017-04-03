@@ -10,7 +10,7 @@ using UnityEngine;
 public class FillCollider : MonoBehaviour
 {
     PolygonCollider2D pc2;
-    void Start()
+    void Update()
     {
         pc2 = gameObject.GetComponent<PolygonCollider2D>();
         if (pc2.pathCount > 1)
