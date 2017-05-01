@@ -5,69 +5,141 @@ using UnityEngine;
 [RequireComponent(typeof(PolygonCollider2D))]
 
 public class LightRenderer : MonoBehaviour {
-
-    //Vectors that limit the Raycast
-    public Vector2 openingOne;
-    public Vector2 openingTwo;
-    //Maximum iterations for the raycast
-    public int maxFractions = 9;
+    
     //Update delay
     public float delay = 0.5f;
     //What Raycast can hit
     public LayerMask layerMask;
 
+    public Vector2[] vectors;
+
     PolygonCollider2D pc2;
-    List<Vector2> corners;
+    Dictionary<KeyValuePair<float, Vector2>, Vector2> corners;
+    PolygonCollider2D[] pcs;
     float lastUpdated = 0.0f;
 
 	// Use this for initialization
 	void Start () {
-        //If opening vectors not manually initialized, set them to the default value
-        if (openingOne == Vector2.zero) openingOne = new Vector2(1, -1).normalized;
-        if (openingTwo == Vector2.zero) openingTwo = new Vector2(1, 1).normalized;
-        corners = new List<Vector2>();
+        corners = new Dictionary<KeyValuePair<float, Vector2>, Vector2>();
         pc2 = GetComponent<PolygonCollider2D>();
-	}
+        Transform w = GameObject.Find("Walls").transform;
+        List<PolygonCollider2D> v = new List<PolygonCollider2D>();
+        for(int i=0; i<w.childCount; i++)
+        {
+            if (!w.GetChild(i).name.Equals("MirrorLight")) {
+                v.Add(w.GetChild(i).GetComponent<PolygonCollider2D>());
+            }
+        }
+        pcs = v.ToArray();
+    }
 	
 	// Update is called once per frame
 	void Update () {
+        //TODO Change the Dictionary to a List and order on insertion instead of ordering at the end
         if (lastUpdated + delay < Time.realtimeSinceStartup)
         {
-            //Delay next update
-            lastUpdated = Time.realtimeSinceStartup;
-            //Reset list
-            corners = new List<Vector2>();
-            corners.Add(Vector2.zero);
-            //Raycast between opening vectors
-            for (int fraction = 0; fraction <= maxFractions; fraction++) {
-                //Interpolate between opening vectors
-                Vector3 toCast = Vector3.Lerp(openingOne, openingTwo, (float)fraction / maxFractions);
-                //Raycast for the chosen vector
-                RaycastHit2D hit = Physics2D.Raycast(this.gameObject.transform.position, toCast, 20.0f, layerMask);
-                //Add to list
-                corners.Add(hit.point - (Vector2)this.gameObject.transform.position);
+            Vector2 lightPosition = this.gameObject.transform.position;
+            corners.Clear();
+            foreach (PolygonCollider2D pc in pcs)
+            {
+                for (int i = 0; i < pc.points.Length; i++)
+                {
+                    Vector2 toCast = Quaternion.AngleAxis(pc.transform.rotation.eulerAngles.z, Vector3.forward) * (pc.points[i] - lightPosition + (Vector2)pc.transform.position);
+
+                    if (pc.name.Equals("Mirror"))
+                    {
+                        Debug.Log(toCast);
+                    }
+
+                    RaycastHit2D hitMain = Physics2D.Raycast(lightPosition, toCast, 20, layerMask);
+                    RaycastHit2D hitLeft = Physics2D.Raycast(lightPosition, Quaternion.AngleAxis(0.001f, Vector3.forward) * toCast, 20.0f, layerMask);
+                    RaycastHit2D hitRight = Physics2D.Raycast(lightPosition, Quaternion.AngleAxis(-0.001f, Vector3.forward) * toCast, 20.0f, layerMask);
+
+                    KeyValuePair<float, Vector2> hitKey = new KeyValuePair<float, Vector2>(realAngle(lightPosition, hitMain.point), hitMain.point);
+                    if (hitMain.collider != null && !corners.ContainsKey(hitKey))
+                    {
+                        corners.Add(hitKey, hitMain.point - lightPosition);
+                        if (hitMain.collider.GetComponent<Mirror_Behaviour>() != null)
+                        {
+                            Vector2 newNormal = Quaternion.AngleAxis(hitMain.transform.rotation.eulerAngles.z, Vector3.up) * hitMain.normal;
+                            hitMain.collider.GetComponent<Mirror_Behaviour>().Triggered(hitMain.point - lightPosition, hitMain.point, newNormal);
+                        }
+                    }
+
+                    hitKey = new KeyValuePair<float, Vector2>(realAngle(lightPosition, hitLeft.point), hitLeft.point);
+                    if (hitLeft.collider != null && !corners.ContainsKey(hitKey))
+                    {
+                        corners.Add(hitKey, hitLeft.point - lightPosition);
+                        if (hitLeft.collider.GetComponent<Mirror_Behaviour>() != null)
+                        {
+                            Vector2 newNormal = Quaternion.AngleAxis(hitLeft.transform.rotation.eulerAngles.z, Vector3.up) * hitLeft.normal;
+                            hitLeft.collider.GetComponent<Mirror_Behaviour>().Triggered(hitLeft.point - lightPosition, hitLeft.point, newNormal);
+                        }
+                    }
+
+                    hitKey = new KeyValuePair<float, Vector2>(realAngle(lightPosition, hitRight.point), hitRight.point);
+                    if (hitRight.collider != null && !corners.ContainsKey(hitKey)) {
+                        corners.Add(hitKey, hitRight.point - lightPosition);
+                        if (hitRight.collider.GetComponent<Mirror_Behaviour>() != null)
+                        {
+                            Vector2 newNormal = Quaternion.AngleAxis(hitRight.transform.rotation.eulerAngles.z, Vector3.up) * hitRight.normal;
+                            hitRight.collider.GetComponent<Mirror_Behaviour>().Triggered(hitRight.point - lightPosition, hitRight.point, newNormal);
+                        }
+                    }
+                }
             }
-            //Convert to array and change the collider's points
-            pc2.SetPath(0, corners.ToArray());
+            KeyValuePair<float, Vector2>[] keys = new KeyValuePair<float, Vector2>[corners.Keys.Count];
+            int index = 0;
+            foreach(KeyValuePair<float, Vector2> k in corners.Keys)
+            {
+                keys[index++] = k;
+            }
+            QuicksortAngles(keys, 0, keys.Length-1);
+            SortOrder(keys);
+            vectors = new Vector2[corners.Values.Count];
+            for(int i=0; i < corners.Values.Count; i++)
+            {
+                corners.TryGetValue(keys[i], out vectors[i]);
+            }
+            pc2.SetPath(0, vectors);
         }
     }
 
-    /*
-    public void Quicksort(Vector2[] elements, int left, int right)
+    void addToList()
+    {
+
+    }
+
+    float realAngle(Vector2 from, Vector2 to)
+    {
+        return Mathf.Atan2(to.y - from.y, to.x - from.x) * Mathf.Rad2Deg;
+    }
+
+    void OnDrawGizmos()
+    {
+        if(corners!=null)
+        foreach(Vector2 v in corners.Values)
+            Gizmos.DrawSphere(v + (Vector2)this.gameObject.transform.position, .1f);
+        Gizmos.DrawSphere(this.gameObject.transform.position, .2f);
+    }
+
+
+    public void QuicksortAngles(KeyValuePair<float, Vector2>[] elements, int left, int right)
     {
         int i = left, j = right;
-        Vector2 pivot = elements[(left + right) / 2];
+        KeyValuePair<float, Vector2> pivot = elements[(left + right) / 2];
 
         while (i <= j){
-            while (IsClockwise(elements[i], pivot, (Vector2)this.gameObject.transform.position) < 0){
+            while (elements[i].Key < pivot.Key){
                 i++;
             }
-            while (IsClockwise(elements[j], pivot, (Vector2)this.gameObject.transform.position) > 0){
+            while (elements[j].Key > pivot.Key)
+            {
                 j--;
             }
             if (i <= j){
                 // Swap
-                Vector2 tmp = elements[i];
+                KeyValuePair<float, Vector2> tmp = elements[i];
                 elements[i] = elements[j];
                 elements[j] = tmp;
 
@@ -77,10 +149,29 @@ public class LightRenderer : MonoBehaviour {
         }
         // Recursive calls
         if (left < j)
-            Quicksort(elements, left, j);
+            QuicksortAngles(elements, left, j);
 
         if (i < right)
-            Quicksort(elements, i, right);
+            QuicksortAngles(elements, i, right);
+    }
+    
+    void SortOrder(KeyValuePair<float, Vector2>[] values)
+    {
+        bool changed = true;
+        while (changed)
+        {
+            changed = false;
+            for (int i = 0; i < values.Length - 1; i++)
+            {
+                if (values[i].Key == values[i + 1].Key && (values[i].Value - (Vector2)transform.position).sqrMagnitude > (values[i + 1].Value - (Vector2)transform.position).sqrMagnitude)
+                {
+                    changed = true;
+                    KeyValuePair<float, Vector2> aux = values[i];
+                    values[i] = values[i + 1];
+                    values[i + 1] = aux;
+                }
+            }
+        }
     }
 
     List<Vector2> toList()
@@ -92,7 +183,7 @@ public class LightRenderer : MonoBehaviour {
         }
         return res;
     }
-
+    /*
     //Returns 1 if first comes before second in clockwise order.
     //Returns -1 if second comes before first.
     //Returns 0 if the points are identical.
@@ -117,9 +208,10 @@ public class LightRenderer : MonoBehaviour {
 
     void OnTriggerEnter2D(Collider2D coll)
     {
+        Debug.Log("New Collision Entsdaer with:" + coll.gameObject.name);
         if (LayerMask.Equals(coll.gameObject.layer, LayerMask.NameToLayer("Switches")))
         {
-            coll.gameObject.GetComponent<Switch_Behaviour>().getTriggered(true);
+            coll.gameObject.GetComponent<Switch_Behaviour>().setTriggered(true);
             Debug.Log("New Collision Enter with:" + coll.gameObject.name);
         }
     }
@@ -128,7 +220,7 @@ public class LightRenderer : MonoBehaviour {
     {
         if (LayerMask.Equals(coll.gameObject.layer, LayerMask.NameToLayer("Switches")))
         {
-            coll.gameObject.GetComponent<Switch_Behaviour>().getTriggered(false);
+            coll.gameObject.GetComponent<Switch_Behaviour>().setTriggered(false);
             Debug.Log("New Collision Exit with:" + coll.gameObject.name);
         }
     }

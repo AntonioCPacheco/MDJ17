@@ -18,9 +18,10 @@ public class Switch_Behaviour : MonoBehaviour {
 		//TODO animation related
 	}
 
-    public void getTriggered(bool mode)
+    public void setTriggered(bool mode)
     {
         triggered = mode ? needsLight : !needsLight;
+        this.GetComponent<Animator>().SetBool("triggered", triggered);
     }
 
     /*
