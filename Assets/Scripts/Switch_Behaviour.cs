@@ -5,23 +5,32 @@ using UnityEngine;
 public class Switch_Behaviour : MonoBehaviour {
     
     public bool needsLight = false;
-    public bool triggered;
+    public bool triggered = false;
+
+    float lastTrigger;
+    float timeBetweenTriggers = 0.5f;
 
 	// Use this for initialization
 	void Start () {
+        lastTrigger = -timeBetweenTriggers;
         triggered = !needsLight;
 	}
 	
 	// Update is called once per frame
 	void Update () {
         //TODO door related stuff
-		//TODO animation related
+        //TODO animation related
+        if (triggered) Debug.Log("IM TRIGGERED!");
 	}
 
     public void setTriggered(bool mode)
     {
-        triggered = mode ? needsLight : !needsLight;
-        this.GetComponent<Animator>().SetBool("triggered", triggered);
+        if (Time.realtimeSinceStartup > lastTrigger + timeBetweenTriggers)
+        {
+            triggered = mode ? needsLight : !needsLight;
+            this.GetComponent<Animator>().SetBool("triggered", triggered);
+            lastTrigger = Time.realtimeSinceStartup;
+        }
     }
 
     /*

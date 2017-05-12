@@ -26,8 +26,9 @@ public class LightRenderer : MonoBehaviour {
         List<PolygonCollider2D> v = new List<PolygonCollider2D>();
         for(int i=0; i<w.childCount; i++)
         {
-            if (!w.GetChild(i).name.Equals("MirrorLight")) {
+            if (w.GetChild(i).name.StartsWith("Mirror") || w.GetChild(i).name.StartsWith("Wall")) {
                 v.Add(w.GetChild(i).GetComponent<PolygonCollider2D>());
+                if(w.GetChild(i).name.StartsWith("Mirror")) v.Add(w.GetChild(i).FindChild("Mirror-OutterEdges").GetComponent<PolygonCollider2D>());
             }
         }
         pcs = v.ToArray();
@@ -44,12 +45,7 @@ public class LightRenderer : MonoBehaviour {
             {
                 for (int i = 0; i < pc.points.Length; i++)
                 {
-                    Vector2 toCast = Quaternion.AngleAxis(pc.transform.rotation.eulerAngles.z, Vector3.forward) * (pc.points[i] - lightPosition + (Vector2)pc.transform.position);
-
-                    if (pc.name.Equals("Mirror"))
-                    {
-                        Debug.Log(toCast);
-                    }
+                    Vector2 toCast = (Vector2)(Quaternion.AngleAxis(pc.transform.localRotation.eulerAngles.z, Vector3.forward) * pc.points[i]) - lightPosition + (Vector2)pc.transform.position;
 
                     RaycastHit2D hitMain = Physics2D.Raycast(lightPosition, toCast, 20, layerMask);
                     RaycastHit2D hitLeft = Physics2D.Raycast(lightPosition, Quaternion.AngleAxis(0.001f, Vector3.forward) * toCast, 20.0f, layerMask);
@@ -61,8 +57,7 @@ public class LightRenderer : MonoBehaviour {
                         corners.Add(hitKey, hitMain.point - lightPosition);
                         if (hitMain.collider.GetComponent<Mirror_Behaviour>() != null)
                         {
-                            Vector2 newNormal = Quaternion.AngleAxis(hitMain.transform.rotation.eulerAngles.z, Vector3.up) * hitMain.normal;
-                            hitMain.collider.GetComponent<Mirror_Behaviour>().Triggered(hitMain.point - lightPosition, hitMain.point, newNormal);
+                            hitMain.collider.GetComponent<Mirror_Behaviour>().Triggered(hitMain.point - lightPosition, hitMain.point);
                         }
                     }
 
@@ -72,8 +67,7 @@ public class LightRenderer : MonoBehaviour {
                         corners.Add(hitKey, hitLeft.point - lightPosition);
                         if (hitLeft.collider.GetComponent<Mirror_Behaviour>() != null)
                         {
-                            Vector2 newNormal = Quaternion.AngleAxis(hitLeft.transform.rotation.eulerAngles.z, Vector3.up) * hitLeft.normal;
-                            hitLeft.collider.GetComponent<Mirror_Behaviour>().Triggered(hitLeft.point - lightPosition, hitLeft.point, newNormal);
+                            hitLeft.collider.GetComponent<Mirror_Behaviour>().Triggered(hitLeft.point - lightPosition, hitLeft.point);
                         }
                     }
 
@@ -82,8 +76,7 @@ public class LightRenderer : MonoBehaviour {
                         corners.Add(hitKey, hitRight.point - lightPosition);
                         if (hitRight.collider.GetComponent<Mirror_Behaviour>() != null)
                         {
-                            Vector2 newNormal = Quaternion.AngleAxis(hitRight.transform.rotation.eulerAngles.z, Vector3.up) * hitRight.normal;
-                            hitRight.collider.GetComponent<Mirror_Behaviour>().Triggered(hitRight.point - lightPosition, hitRight.point, newNormal);
+                            hitRight.collider.GetComponent<Mirror_Behaviour>().Triggered(hitRight.point - lightPosition, hitRight.point);
                         }
                     }
                 }
@@ -103,6 +96,7 @@ public class LightRenderer : MonoBehaviour {
             }
             pc2.SetPath(0, vectors);
         }
+
     }
 
     void addToList()
@@ -204,7 +198,7 @@ public class LightRenderer : MonoBehaviour {
 
         // Check to see which point is closest
         return (firstOffset.sqrMagnitude < secondOffset.sqrMagnitude) ? -1 : 1;
-    }*/
+    }
 
     void OnTriggerEnter2D(Collider2D coll)
     {
@@ -223,5 +217,5 @@ public class LightRenderer : MonoBehaviour {
             coll.gameObject.GetComponent<Switch_Behaviour>().setTriggered(false);
             Debug.Log("New Collision Exit with:" + coll.gameObject.name);
         }
-    }
+    }*/
 }

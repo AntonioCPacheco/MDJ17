@@ -21,7 +21,7 @@ public class moveMirror : MonoBehaviour
     void Start()
     {
         Physics2D.queriesStartInColliders = false;
-        GameObject.Find("Text").GetComponent<UnityEngine.UI.Text>().text = "Move: WASD or Arrow Keys\nGrab / Rotate: " + grabKey;
+        //GameObject.Find("Text").GetComponent<UnityEngine.UI.Text>().text = "Move: WASD or Arrow Keys\nGrab / Rotate: " + grabKey;
     }
 
     // Update is called once per frame
@@ -29,6 +29,8 @@ public class moveMirror : MonoBehaviour
     {
         RaycastHit2D hit = Physics2D.Raycast(this.transform.position, direction * this.transform.localScale.x, distance, MirrorLayer);
 
+        float move1 = Input.GetAxis("Horizontal");
+        float move2 = Input.GetAxis("Vertical");
         if (hit.collider != null &&  Input.GetKeyDown(grabKey) && !rotating && !pushing)
         {
             mirror = hit.collider.gameObject;
@@ -58,13 +60,13 @@ public class moveMirror : MonoBehaviour
         {
             mirror.GetComponent<FixedJoint2D>().enabled = false;
             mirror.GetComponent<mirrorMove>().beingPushed = false;
+            mirror.GetComponent<Rigidbody2D>().velocity = Vector2.zero;
+            mirror.GetComponent<Rigidbody2D>().angularVelocity = 0f;
             rotating = false;
         }
 
         else if (!rotating && !pushing)
         {
-            float move1 = Input.GetAxis("Horizontal");
-            float move2 = Input.GetAxis("Vertical");
             float speed = (move1 != 0 && move2 != 0) ? Mathf.Sqrt((maxSpeed * maxSpeed)/2) : maxSpeed;
             GetComponent<Rigidbody2D>().velocity = new Vector2(move1 * speed, move2 * speed);
             if (move1 < 0 && move2 < 0)
@@ -104,9 +106,6 @@ public class moveMirror : MonoBehaviour
         }
         else if (pushing)
         {
-            float move1 = Input.GetAxis("Horizontal");
-            float move2 = Input.GetAxis("Vertical");
-
             float speed = (move1 != 0 && move2 != 0) ? Mathf.Sqrt((maxSpeed * maxSpeed) / 2) : maxSpeed;
             speed *= .5f;
             GetComponent<Rigidbody2D>().velocity = new Vector2(move1 * speed, move2 * speed);
@@ -116,10 +115,10 @@ public class moveMirror : MonoBehaviour
         }
         else if (rotating)
         {
-            float move1 = Input.GetAxis("Horizontal");
             _angle = RotateSpeed * Time.deltaTime * move1/15;
             _centre = mirror.transform.position;
             transform.position = RotatePointAroundPivot(transform.position, _centre, Quaternion.Euler(0, 0, _angle));
+            //transform.rotation = Quaternion
             direction = _centre - (Vector2)transform.position;
             mirror.GetComponent<Rigidbody2D>().rotation += _angle*500/5;
             /*Vector3 vectorToTarget = mirror.transform.position - transform.position;
@@ -127,7 +126,18 @@ public class moveMirror : MonoBehaviour
             Quaternion q = Quaternion.AngleAxis(angle, Vector3.forward);
             transform.rotation = Quaternion.RotateTowards(transform.rotation, q, Time.deltaTime);*/
         }
-
+        
+        if (Mathf.Abs(move1) > Mathf.Abs(move2))
+        {
+            move2 = 0;
+        }
+        else
+        {
+            move1 = 0;
+        }
+        this.GetComponent<Animator>().SetFloat("hVelocity", move1);
+        this.GetComponent<Animator>().SetFloat("vVelocity", move2);
+        
     }
 
     public static Vector3 RotatePointAroundPivot(Vector3 point, Vector3 pivot, Quaternion angle)
