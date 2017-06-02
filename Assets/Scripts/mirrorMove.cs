@@ -35,16 +35,15 @@ public class mirrorMove : MonoBehaviour
 
             if (beingPushed == false)
             {
-
-
                 GetComponent<Rigidbody2D>().mass = imovableMass;
-
             }
             else
             {
+                //this.GetComponent<Mirror_Behaviour>().tChanged = true;
                 GetComponent<Rigidbody2D>().mass = defaultMass;
                 //	GetComponent<Rigidbody2D> ().isKinematic = false;
             }
+            //this.GetComponent<Mirror_Behaviour>().tChanged = true;
 
         }
         else
@@ -53,5 +52,13 @@ public class mirrorMove : MonoBehaviour
         }
     }
 
-
+    void Update()
+    {
+        if (lastPos != this.transform.position)
+        {
+            foreach(Mirror_Behaviour m in this.transform.GetComponentsInChildren<Mirror_Behaviour>())
+                m.tChanged = true;
+        }
+        lastPos = this.transform.position;
+    }
 }

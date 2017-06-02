@@ -10,7 +10,7 @@ public class LightRenderer : MonoBehaviour {
     public float delay = 0.5f;
     //What Raycast can hit
     public LayerMask layerMask;
-
+    public float maxDistance = 30.0f;
     public Vector2[] vectors;
 
     PolygonCollider2D pc2;
@@ -19,19 +19,27 @@ public class LightRenderer : MonoBehaviour {
     float lastUpdated = 0.0f;
 
 	// Use this for initialization
-	void Start () {
-        corners = new Dictionary<KeyValuePair<float, Vector2>, Vector2>();
-        pc2 = GetComponent<PolygonCollider2D>();
-        Transform w = GameObject.Find("Walls").transform;
-        List<PolygonCollider2D> v = new List<PolygonCollider2D>();
-        for(int i=0; i<w.childCount; i++)
+	void Start ()
+    {
+        try
         {
-            if (w.GetChild(i).name.StartsWith("Mirror") || w.GetChild(i).name.StartsWith("Wall")) {
-                v.Add(w.GetChild(i).GetComponent<PolygonCollider2D>());
-                if(w.GetChild(i).name.StartsWith("Mirror")) v.Add(w.GetChild(i).FindChild("Mirror-OutterEdges").GetComponent<PolygonCollider2D>());
+            corners = new Dictionary<KeyValuePair<float, Vector2>, Vector2>();
+            pc2 = GetComponent<PolygonCollider2D>();
+            Transform w = GameObject.Find("Walls").transform;
+            List<PolygonCollider2D> v = new List<PolygonCollider2D>();
+            for(int i=0; i<w.childCount; i++)
+            {
+                if (w.GetChild(i).name.StartsWith("Mirror") || w.GetChild(i).name.StartsWith("Wall")) {
+                    v.Add(w.GetChild(i).GetComponent<PolygonCollider2D>());
+                    if(w.GetChild(i).name.StartsWith("Mirror")) v.Add(w.GetChild(i).FindChild("Mirror-OutterEdges").GetComponent<PolygonCollider2D>());
+                }
             }
+            pcs = v.ToArray();
         }
-        pcs = v.ToArray();
+        catch (System.Exception e)
+        {
+            Debug.Log(e.Message);
+        }
     }
 	
 	// Update is called once per frame
@@ -45,19 +53,21 @@ public class LightRenderer : MonoBehaviour {
             {
                 for (int i = 0; i < pc.points.Length; i++)
                 {
-                    Vector2 toCast = (Vector2)(Quaternion.AngleAxis(pc.transform.localRotation.eulerAngles.z, Vector3.forward) * pc.points[i]) - lightPosition + (Vector2)pc.transform.position;
+                    Vector2 toCast = (Vector2)(Quaternion.AngleAxis(pc.transform.rotation.eulerAngles.z, Vector3.forward) * pc.points[i]) - lightPosition + (Vector2)pc.transform.position;
+                    //Debug.Log(pc.name + " - " + toCast);
 
-                    RaycastHit2D hitMain = Physics2D.Raycast(lightPosition, toCast, 20, layerMask);
-                    RaycastHit2D hitLeft = Physics2D.Raycast(lightPosition, Quaternion.AngleAxis(0.001f, Vector3.forward) * toCast, 20.0f, layerMask);
-                    RaycastHit2D hitRight = Physics2D.Raycast(lightPosition, Quaternion.AngleAxis(-0.001f, Vector3.forward) * toCast, 20.0f, layerMask);
+                    RaycastHit2D hitMain = Physics2D.Raycast(lightPosition, toCast, maxDistance, layerMask);
+                    RaycastHit2D hitLeft = Physics2D.Raycast(lightPosition, Quaternion.AngleAxis(0.001f, Vector3.forward) * toCast, maxDistance, layerMask);
+                    RaycastHit2D hitRight = Physics2D.Raycast(lightPosition, Quaternion.AngleAxis(-0.001f, Vector3.forward) * toCast, maxDistance, layerMask);
 
                     KeyValuePair<float, Vector2> hitKey = new KeyValuePair<float, Vector2>(realAngle(lightPosition, hitMain.point), hitMain.point);
+                    GameObject g = this.gameObject;
                     if (hitMain.collider != null && !corners.ContainsKey(hitKey))
                     {
                         corners.Add(hitKey, hitMain.point - lightPosition);
-                        if (hitMain.collider.GetComponent<Mirror_Behaviour>() != null)
+                        if (hitMain.collider.GetComponent<ReflectionManager>() != null)
                         {
-                            hitMain.collider.GetComponent<Mirror_Behaviour>().Triggered(hitMain.point - lightPosition, hitMain.point);
+                            hitMain.collider.GetComponent<ReflectionManager>().Triggered(g, lightPosition, hitMain.point);
                         }
                     }
 
@@ -65,18 +75,18 @@ public class LightRenderer : MonoBehaviour {
                     if (hitLeft.collider != null && !corners.ContainsKey(hitKey))
                     {
                         corners.Add(hitKey, hitLeft.point - lightPosition);
-                        if (hitLeft.collider.GetComponent<Mirror_Behaviour>() != null)
+                        if (hitLeft.collider.GetComponent<ReflectionManager>() != null)
                         {
-                            hitLeft.collider.GetComponent<Mirror_Behaviour>().Triggered(hitLeft.point - lightPosition, hitLeft.point);
+                            hitLeft.collider.GetComponent<ReflectionManager>().Triggered(g, lightPosition, hitLeft.point);
                         }
                     }
 
                     hitKey = new KeyValuePair<float, Vector2>(realAngle(lightPosition, hitRight.point), hitRight.point);
                     if (hitRight.collider != null && !corners.ContainsKey(hitKey)) {
                         corners.Add(hitKey, hitRight.point - lightPosition);
-                        if (hitRight.collider.GetComponent<Mirror_Behaviour>() != null)
+                        if (hitRight.collider.GetComponent<ReflectionManager>() != null)
                         {
-                            hitRight.collider.GetComponent<Mirror_Behaviour>().Triggered(hitRight.point - lightPosition, hitRight.point);
+                            hitRight.collider.GetComponent<ReflectionManager>().Triggered(g, lightPosition, hitRight.point);
                         }
                     }
                 }

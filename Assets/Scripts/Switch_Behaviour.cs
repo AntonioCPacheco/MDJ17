@@ -18,9 +18,6 @@ public class Switch_Behaviour : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
-        //TODO door related stuff
-        //TODO animation related
-        if (triggered) Debug.Log("IM TRIGGERED!");
 	}
 
     public void setTriggered(bool mode)
@@ -32,25 +29,4 @@ public class Switch_Behaviour : MonoBehaviour {
             lastTrigger = Time.realtimeSinceStartup;
         }
     }
-
-    /*
-    void OnCollisionEnter2D(Collision2D coll)
-    {
-        Debug.Log("ola");
-        //TODO resolve multiple lights (LIST)
-        if(LayerMask.Equals(coll.gameObject.layer, LayerMask.NameToLayer("Light")))
-        {
-            triggered = needsLight;
-            Debug.Log("New Collision Enter with:" + coll.gameObject.name + " ; variable triggered set to " + triggered);
-        }
-    }
-
-    void OnCollisionExit2D(Collision2D coll)
-    {
-        if (LayerMask.Equals(coll.gameObject.layer, LayerMask.NameToLayer("Light")))
-        {
-            triggered = !needsLight;
-            Debug.Log("New Collision Exit with:" + coll.gameObject.name + " ; variable triggered set to " + triggered);
-        }
-    }*/
 }

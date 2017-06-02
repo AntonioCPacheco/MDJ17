@@ -2,231 +2,171 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
+using System;
 
 public class Mirror_Behaviour : MonoBehaviour {
+    
 
+    GameObject source;
     public bool triggered;
+    private float epsilon = 1E-5f;
+    bool started = false;
+    public float updateDelay = 0.1f;
+    float lastChanged;
+
+    bool locked = false;
+
+    public float maxDistance = 30.0f;
+
+    public float auxMaxX, auxMaxY, auxMinX, auxMinY;
 
     public LayerMask layerMask;
     public LayerMask outterLimits;
 
-    List<Vector2> containingAreaList;
+    Dictionary<Vector2, Vector2> containingAreaDict;
     PolygonCollider2D containingArea;
     bool changed = false;
-    bool tChanged = false;
+    public bool tChanged = false;
     List<Vector2> insideCorners;
 
-    List<Vector2> lightArea;
+    Dictionary<Vector2, Vector2> lightArea;
     Vector2 mirrorPosition;
 
     // Use this for initialization
     void Start () {
-        containingArea = this.transform.FindChild("AuxCollider").GetComponent<PolygonCollider2D>();
-        insideCorners = new List<Vector2>();
-        lightArea = new List<Vector2>();
-        containingAreaList = new List<Vector2>();
+        if (!started)
+        {
+            started = true;
+            //Debug.Log(name + " started");
+            containingArea = this.transform.FindChild("AuxCollider").GetComponent<PolygonCollider2D>();
+            insideCorners = new List<Vector2>();
+            lightArea = new Dictionary<Vector2, Vector2>();
+            containingAreaDict = new Dictionary<Vector2, Vector2>();
+            lastChanged = -updateDelay;
+        }
+    }
+
+    void Awake()
+    {
+        if (!started)
+        {
+            Start();
+            started = true;
+        }
     }
 	
 	// Update is called once per frame
 	void Update () {
-
-        if (changed)
+        locked = true;
+        try
         {
-            Vector2[] auxV = containingAreaList.ToArray();
-            QuicksortAngles(auxV, 0, auxV.Length-1);
-            SortOrder(auxV);
-            containingArea.points = auxV;
-            changed = false;
-        }
-        mirrorPosition = this.transform.position;
-        castToInsideCorners();
+            mirrorPosition = this.transform.position;
 
-        if (lightArea.Count > 0)
-        {
-            Vector2[] vecs = new Vector2[lightArea.Count];
-            int index = 0;
-            foreach (Vector2 k in lightArea)
+            if (Time.realtimeSinceStartup - lastChanged >= updateDelay)
             {
-                vecs[index++] = k;
-            }
-            QuicksortAngles(vecs, 0, index);
-            SortOrder(vecs);
-            this.transform.FindChild("MirrorLight").GetComponent<PolygonCollider2D>().SetPath(0, vecs);
-        }
-        if (this.GetComponent<Rigidbody2D>().velocity != Vector2.zero) tChanged = true;
-        /*
-            if (corners.Count != containingArea.points.Length) {
-                //corners = new Vector2[containingArea.points.Length];
-                Transform w = GameObject.Find("Walls").transform;
-                for (int i = 0; i < w.childCount; i++)
+                if (changed)
                 {
-                    Transform child = w.GetChild(i);
-                    if (child.name.StartsWith("Wall"))
-                    {
-                        Vector2[] p = child.GetComponent<PolygonCollider2D>().points;
-                        for (int j = 0; j < p.Length; j++)
-                        {
-                            if (containingArea.bounds.Contains(p[j])) corners.Add(p[j]);
-                        }
-                    }
-                    else if(child.name.StartsWith("Mirror") && !child.Equals(this))
-                    {
-                        Vector2[] p = child.GetComponent<PolygonCollider2D>().points;
-                        for (int j = 0; j < p.Length; j++)
-                        {
-                            if (containingArea.bounds.Contains(p[j])) corners.Add(p[j]);
-                        }
-                        p = child.FindChild("Mirror-OutterEdges").GetComponent<PolygonCollider2D>().points;
-                        for (int j = 0; j < p.Length; j++)
-                        {
-                            if (containingArea.bounds.Contains(p[j])) corners.Add(p[j]);
-                        }
-                    }
+                    //Debug.Log("changed");
+                    changed = false;
+                    processContainingArea();
                 }
+
+               //castToInsideCorners();
+                processLightArea();
             }
-            
-            foreach(Vector2 c in corners)
+
+            if (tChanged)
             {
-                RaycastHit2D hitMain = Physics2D.Raycast(mirrorPosition, c, 20, layerMask);
-                RaycastHit2D hitLeft = Physics2D.Raycast(mirrorPosition, Quaternion.AngleAxis(0.001f, Vector3.forward) * c, 20.0f, layerMask);
-                RaycastHit2D hitRight = Physics2D.Raycast(mirrorPosition, Quaternion.AngleAxis(-0.001f, Vector3.forward) * c, 20.0f, layerMask);
-                    
-                if (hitMain.collider != null && !lightArea.Contains(hitMain.point))
-                {
-                    lightArea.Add(hitMain.point - mirrorPosition);
-                    if (hitMain.collider.GetComponent<Mirror_Behaviour>() != null)
-                    {
-                        hitMain.collider.GetComponent<Mirror_Behaviour>().Triggered(hitMain.point - mirrorPosition, hitMain.point);
-                    }
-                }
-                    
-                if (hitLeft.collider != null && !lightArea.Contains(hitLeft.point))
-                {
-                    lightArea.Add(hitLeft.point - mirrorPosition);
-                    if (hitLeft.collider.GetComponent<Mirror_Behaviour>() != null)
-                    {
-                        hitLeft.collider.GetComponent<Mirror_Behaviour>().Triggered(hitLeft.point - mirrorPosition, hitLeft.point);
-                    }
-                }
-                    
-                if (hitRight.collider != null && !lightArea.Contains(hitRight.point))
-                {
-                    lightArea.Add(hitRight.point - mirrorPosition);
-                    if (hitRight.collider.GetComponent<Mirror_Behaviour>() != null)
-                    {
-                        hitRight.collider.GetComponent<Mirror_Behaviour>().Triggered(hitRight.point - mirrorPosition, hitRight.point);
-                    }
-                }
-                
-            }
-            //QuicksortAngles(corners,);
-
-        }
+                locked = false;
+                Debug.Log("AAAH");
+                Destroy(this.gameObject);
 
 
-        /*
-        if (!lastPosition.Equals(this.transform.position) || !lastRotation.Equals(this.transform.rotation))
-        {
-            points.Clear();
-            lastPosition = this.transform.position;
-            lastRotation = this.transform.rotation;
-        }
-        if (points.Keys.Count > 0)
-        {
-            KeyValuePair<float, Vector2>[] keys = new KeyValuePair<float, Vector2>[points.Keys.Count];
-            int index = 0;
-            foreach (KeyValuePair<float, Vector2> f in points.Keys)
-            {
-                keys[index++] = f;
-            }
-            QuicksortAngles(keys, 0, keys.Length - 1);
-            SortOrder(keys);
-            vectors = new Vector2[points.Values.Count];
-            for (int i = 0; i < points.Values.Count; i++)
-            {
-                points.TryGetValue(keys[i], out vectors[i]);
-            }
-            this.transform.FindChild("Light-Mirror").GetComponent<PolygonCollider2D>().points = vectors;
-        }*/
-    }
-    
-    public void Triggered(Vector2 incoming, Vector2 point)
-    {
-        if (tChanged) containingAreaList.Clear();
-
-        Vector2 normal = this.transform.up;
-        Vector2 outgoing = Vector2.Reflect(incoming, normal);
-        RaycastHit2D hit2d = Physics2D.Raycast(point, outgoing, 20.0f, outterLimits);
-        if(hit2d.collider != null)
-        {
-            /*
-            if (!lightArea.Contains(hit2d.point)) lightArea.Add(hit2d.point);
-            if (!lightArea.Contains(point)) lightArea.Add(point);
-            */
-            if (!containingAreaList.Contains(hit2d.point)) {
-                containingAreaList.Add(hit2d.point);
-                changed = true;
-            }
-            if (!containingAreaList.Contains(point)) {
-                containingAreaList.Add(point);
-                changed = true;
-            }
-            if (changed)
-            { //BBUBBBBBBBBBBBBBBBBBBBBBBBBBBBUUUUUUUUUUUUUUUUUUUUUUUUUUUUGGGGGGGGGGGGGGGGGGG
-
+                lastChanged = Time.realtimeSinceStartup;
+                containingAreaDict.Clear();
+                lightArea.Clear();
                 insideCorners.Clear();
-                if (containingAreaList.Count > 2)
+                //this.transform.FindChild("LightArea").GetComponent<PolygonCollider2D>().SetPath(0, new Vector2[0]);
+                //this.transform.FindChild("AuxCollider").GetComponent<PolygonCollider2D>().SetPath(0, new Vector2[0]);
+                tChanged = false;
+            }
+        }
+        catch (Exception e)
+        {
+            locked = false;
+            Debug.Log(e.Message);
+        }
+        locked = false;
+    }
+
+    //Falta acrescentar alguma maneira de distinguir entre fontes de luz 
+    
+    public void Triggered(Vector2 source, Vector2 point)
+    {
+        locked = true;
+        if (!lightArea.Keys.Contains(point - mirrorPosition) && !containingAreaDict.Keys.Contains(point - mirrorPosition))
+        {
+            Vector2 normal = this.transform.parent.up;
+
+            Vector2 outgoing = Vector2.Reflect(point - source, normal);
+
+            GameObject g = this.gameObject;
+            RaycastHit2D hit2d = Physics2D.Raycast(point, outgoing, maxDistance, layerMask);
+            if (hit2d.collider != null)
+            {
+                addToDict(lightArea, (point - mirrorPosition), (hit2d.point - mirrorPosition));
+
+                if (hit2d.collider.GetComponent<ReflectionManager>() != null)
                 {
-
-                    Vector2[] vecs = new Vector2[containingAreaList.Count];
-                    int index = 0;
-                    foreach (Vector2 k in containingAreaList)
-                    {
-                        vecs[index++] = k;
-                    }
-                    QuicksortAngles(vecs, 0, index);
-                    SortOrder(vecs);
-                    containingArea.SetPath(0, vecs);
-
-
-                    Transform w = GameObject.Find("Walls").transform;
-                    Vector2 toAdd;
-                    for (int i = 0; i < w.childCount; i++)
-                    {
-                        Transform child = w.GetChild(i);
-                        PolygonCollider2D p = child.GetComponent<PolygonCollider2D>();
-                        if (child.name.StartsWith("Wall"))
-                        {
-                            for (int j = 0; j < p.points.Length; j++)
-                            {
-                                toAdd = (Vector2)(Quaternion.AngleAxis(p.transform.localRotation.eulerAngles.z, Vector3.forward) * p.points[j]) - mirrorPosition + (Vector2)p.transform.position;
-                                if (containingArea.bounds.Contains(toAdd) && !insideCorners.Contains(toAdd)) insideCorners.Add(toAdd);
-                            }
-                        }
-                        else if (child.name.StartsWith("Mirror") && !child.Equals(this.transform))
-                        {
-                            for (int j = 0; j < p.points.Length; j++)
-                            {
-                                toAdd = (Vector2)(Quaternion.AngleAxis(p.transform.localRotation.eulerAngles.z, Vector3.forward) * p.points[j]) - mirrorPosition + (Vector2)p.transform.position;
-                                if (containingArea.bounds.Contains(toAdd) && !insideCorners.Contains(toAdd)) insideCorners.Add(toAdd);
-                            }
-                            p = child.FindChild("Mirror-OutterEdges").GetComponent<PolygonCollider2D>();
-                            for (int j = 0; j < p.points.Length; j++)
-                            {
-                                toAdd = (Vector2)(Quaternion.AngleAxis(p.transform.localRotation.eulerAngles.z, Vector3.forward) * p.points[j]) - mirrorPosition + (Vector2)p.transform.position;
-                                if (containingArea.bounds.Contains(toAdd) && !insideCorners.Contains(toAdd)) insideCorners.Add(toAdd);
-                            }
-                        }
-                    }
+                    hit2d.collider.GetComponent<ReflectionManager>().Triggered(g, point, hit2d.point);
                 }
             }
-            /*
-                       KeyValuePair<float, Vector2> hitKey = new KeyValuePair<float, Vector2>(realAngle((Vector2)transform.position, hit2d.point), hit2d.point);
-                       if(!points.ContainsKey(hitKey) && !points.ContainsValue(hit2d.point - (Vector2)transform.position)) points.Add(hitKey, hit2d.point - (Vector2)transform.position);
-                       hitKey = new KeyValuePair<float, Vector2>(realAngle((Vector2)transform.position, point), point);
-                       if (!points.ContainsKey(hitKey) && !points.ContainsValue(point - (Vector2)transform.position)) points.Add(hitKey, point - (Vector2)transform.position);*/
+            RaycastHit2D hit2dOut = Physics2D.Raycast(point, outgoing, maxDistance, outterLimits);
+            if (hit2dOut.collider != null)
+            {
+                if (addToDict(containingAreaDict, (point - mirrorPosition), (hit2dOut.point - mirrorPosition)))
+                {
+                    changed = true;
+                }
+            }
         }
-        changed = false;
+        locked = false;
+    }
+
+    void processLightArea()
+    {
+        Vector2[] lightAreaOrdered;
+        sortDict(lightArea, out lightAreaOrdered);
+        this.transform.FindChild("LightArea").GetComponent<PolygonCollider2D>().SetPath(0, lightAreaOrdered);
+    }
+
+    void processContainingArea() //Orders the containing area, and gets all the corners that are inside it
+    {
+        if (containingAreaDict.Count >= 2)
+        {
+            getCorners();
+            Vector2[] containingAreaOrdered;
+            sortDict(containingAreaDict, out containingAreaOrdered);
+            containingArea.SetPath(0, containingAreaOrdered);
+
+            insideCorners.Clear();
+            Transform w = GameObject.Find("Walls").transform;
+            for (int i = 0; i < w.childCount; i++)
+            {
+                Transform child = w.GetChild(i);
+                PolygonCollider2D p = child.GetComponent<PolygonCollider2D>();
+                if (child.name.StartsWith("Wall"))
+                {
+                    addToInsideCorners(p);
+                }
+                else if (child.name.StartsWith("Mirror") && !child.position.Equals(this.transform.position))
+                {
+                    addToInsideCorners(p);
+                    p = child.FindChild("Mirror-OutterEdges").GetComponent<PolygonCollider2D>();
+                    addToInsideCorners(p);
+                }
+            }
+        }
     }
 
     //Casts 3 rays to every corner inside the containing area
@@ -234,109 +174,216 @@ public class Mirror_Behaviour : MonoBehaviour {
     {
         if (insideCorners.Count > 0)
         {
-            foreach (Vector2 v in insideCorners)
+            try
             {
-                RaycastHit2D hitMain = Physics2D.Raycast(mirrorPosition, v, 20, layerMask);
-                RaycastHit2D hitLeft = Physics2D.Raycast(mirrorPosition, Quaternion.AngleAxis(0.001f, Vector3.forward) * v, 20.0f, layerMask);
-                RaycastHit2D hitRight = Physics2D.Raycast(mirrorPosition, Quaternion.AngleAxis(-0.001f, Vector3.forward) * v, 20.0f, layerMask);
-
-                if (hitMain.collider != null && !lightArea.Contains(hitMain.point))
+                foreach (Vector2 v in insideCorners)
                 {
-                    lightArea.Add(hitMain.point - mirrorPosition);
-                    if (hitMain.collider.GetComponent<Mirror_Behaviour>() != null)
-                    {
-                        hitMain.collider.GetComponent<Mirror_Behaviour>().Triggered(hitMain.point - mirrorPosition, hitMain.point);
-                    }
-                }
+                    Vector2 origin;
+                    origin = /*this.transform.parent.position + this.transform.parent.right + (this.transform.parent.up * 0.1f);//*/calculateOrigin(v, this.source.transform.position) + (Vector2)(this.transform.parent.up*0.1f);
+                    //Debug.Log(origin);
 
-                if (hitLeft.collider != null && !lightArea.Contains(hitMain.point))
-                {
-                    lightArea.Add(hitLeft.point - mirrorPosition);
-                    if (hitLeft.collider.GetComponent<Mirror_Behaviour>() != null)
-                    {
-                        hitLeft.collider.GetComponent<Mirror_Behaviour>().Triggered(hitLeft.point - mirrorPosition, hitLeft.point);
-                    }
-                }
+                    RaycastHit2D hitMain = Physics2D.Raycast(origin, v - origin, maxDistance, layerMask);
+                    RaycastHit2D hitLeft = Physics2D.Raycast(origin, (Vector2)(Quaternion.AngleAxis(0.001f, Vector3.forward) * v) - origin, maxDistance, layerMask);
+                    RaycastHit2D hitRight = Physics2D.Raycast(origin, (Vector2)(Quaternion.AngleAxis(-0.001f, Vector3.forward) * v) - origin, maxDistance, layerMask);
 
-                if (hitRight.collider != null && !lightArea.Contains(hitMain.point))
-                {
-                    lightArea.Add(hitRight.point - mirrorPosition);
-                    if (hitRight.collider.GetComponent<Mirror_Behaviour>() != null)
-                    {
-                        hitRight.collider.GetComponent<Mirror_Behaviour>().Triggered(hitRight.point - mirrorPosition, hitRight.point);
-                    }
+                    if (hitMain.collider.name.Equals(this.transform.parent.name)) Debug.Log("Self colliding");
+                    processRaycastHit(hitMain, origin);
+                    processRaycastHit(hitLeft, origin + (Vector2)(this.transform.parent.right * epsilon));
+                    processRaycastHit(hitRight, origin - (Vector2)(this.transform.parent.right * epsilon));
                 }
+            }
+            catch (InvalidOperationException ioe)
+            {
+                Debug.Log(ioe.Message);
             }
         }
     }
 
-    //Calculates the real angle between 2 vectors
-    float realAngle(Vector2 from, Vector2 to)
+    Vector2 calculateOrigin(Vector2 v1, Vector2 v2)
     {
-        return Mathf.Atan2(to.y - from.y, to.x - from.x) * Mathf.Rad2Deg;
+
+        v1 = this.transform.parent.InverseTransformPoint(v1);
+        v2 = this.transform.parent.InverseTransformPoint(v2);
+
+        float d1 = Mathf.Abs(v1.y);
+        float d2 = Mathf.Abs(v2.y);
+
+        float diffX = v1.x - v2.x;
+        int s = (v1.x < v2.x) ? -1 : 1;
+        diffX = Mathf.Abs(diffX);
+
+        float c1 = diffX * (d1 / (d2+d1));
+        
+        float res = (v1.x - (s * c1));
+        //Debug.Log(res);
+        return this.transform.parent.TransformPoint(new Vector2(res, 0));// + this.transform.parent.position;
     }
 
-    //Sorts given vector in counterclockwise order
-    public void QuicksortAngles(Vector2[] elements, int left, int right)
+    void getCorners()
     {
-        int i = left, j = right;
-        float pivot = realAngle(transform.position, elements[(left + right) / 2]);
+        Vector2[] corners = GameObject.Find("Outter Limits").GetComponent<EdgeCollider2D>().points;
 
-        while (i <= j)
+        float maxX = float.MinValue, maxY = maxX;
+        float minX = float.MaxValue, minY = minX;
+        foreach (Vector2 a in containingAreaDict.Values)
         {
-            while (realAngle(transform.position, elements[i]) < pivot)
-            {
-                i++;
-            }
-            while (realAngle(transform.position, elements[j]) > pivot)
-            {
-                j--;
-            }
-            if (i <= j)
-            {
-                // Swap
-                Vector2 tmp = elements[i];
-                elements[i] = elements[j];
-                elements[j] = tmp;
+            Vector2 v = a + mirrorPosition;
+            maxX = (v.x > maxX) ? v.x : maxX;
+            maxY = (v.y > maxY) ? v.y : maxY;
+            minX = (v.x < minX) ? v.x : minX;
+            minY = (v.y < minY) ? v.y : minY;
+        }
 
-                i++;
-                j--;
+        if (floatEquals(minX, maxX) || floatEquals(minY, maxY)) return;
+        Vector2 toAdd;
+        if (floatEquals(minX, auxMinX))
+        {
+            if(floatEquals(minY, auxMinY))
+            {
+                toAdd = new Vector2(minX, minY);
+                Vector2 key = calculateOrigin(this.source.transform.position, toAdd);
+                key = this.transform.TransformPoint(key);
+                key -= mirrorPosition;
+                addToDict(containingAreaDict, key, toAdd - mirrorPosition);
+            }
+            if (floatEquals(maxY, auxMaxY))
+            {
+                toAdd = new Vector2(minX, maxY);
+                Vector2 key = calculateOrigin(this.source.transform.position, toAdd);
+                key = this.transform.TransformPoint(key);
+                key -= mirrorPosition;
+                addToDict(containingAreaDict, key, toAdd - mirrorPosition);
             }
         }
-        // Recursive calls
-        if (left < j)
-            QuicksortAngles(elements, left, j);
-
-        if (i < right)
-            QuicksortAngles(elements, i, right);
+        if (floatEquals(maxX, auxMaxX))
+        {
+            if (floatEquals(minY, auxMinY))
+            {
+                toAdd = new Vector2(maxX, minY);
+                Vector2 key = calculateOrigin(this.source.transform.position, toAdd);
+                key = this.transform.TransformPoint(key);
+                key -= mirrorPosition;
+                addToDict(containingAreaDict, key, toAdd - mirrorPosition);
+            }
+            if (floatEquals(maxY, auxMaxY))
+            {
+                toAdd = new Vector2(maxX, maxY);
+                Vector2 key = calculateOrigin(this.source.transform.position, toAdd);
+                key = this.transform.TransformPoint(key);
+                key -= mirrorPosition;
+                addToDict(containingAreaDict, key, toAdd - mirrorPosition);
+            }
+        }
     }
 
-
-    void SortOrder(Vector2[] values)
+    void processRaycastHit(RaycastHit2D r, Vector2 origin)
     {
-        bool changed = true;
-        while (changed)
+        Vector2 auxPos = this.transform.parent.position;
+        GameObject g = this.gameObject;
+        if (r.collider != null && !lightArea.ContainsKey(origin))
         {
-            changed = false;
-            for (int i = 0; i < values.Length - 1; i++)
+            lightArea.Add(origin, r.point);
+            
+            if (r.transform.GetComponent<ReflectionManager>() != null)
             {
-                if (realAngle(transform.position, values[i]) == realAngle(transform.position, values[i + 1])
-                    && (values[i] - (Vector2)transform.position).sqrMagnitude > (values[i + 1] - (Vector2)transform.position).sqrMagnitude)
-                {
-                    changed = true;
-                    Vector2 aux = values[i];
-                    values[i] = values[i + 1];
-                    values[i + 1] = aux;
-                }
+                //Debug.Log(r.transform.name);
+                r.transform.GetComponent<ReflectionManager>().Triggered(g, origin, r.point);
             }
         }
+    }
+
+    void addToInsideCorners(PolygonCollider2D p)
+    {
+        Vector2 toAdd;
+        for (int j = 0; j < p.points.Length; j++)
+        {
+            toAdd = p.transform.TransformPoint(p.points[j]);
+            if (containingArea.OverlapPoint(toAdd))
+            {
+                //Debug.Log(toAdd);
+                addToList(insideCorners, toAdd);
+                //Debug.Log(toAdd);
+            }
+        }
+    }
+
+    void printArray(Vector2[] array)
+    {
+        for(int i=0; i < array.Length; i++)
+        {
+            Debug.Log(array[i]);
+        }
+    }
+
+    void printList(List<Vector2> list)
+    {
+        foreach(Vector2 v in list)
+        {
+            Debug.Log(name + ", " +v);
+        }
+    }
+
+    bool addToDict(Dictionary<Vector2, Vector2> d, Vector2 key, Vector2 value)
+    {
+        if (!d.ContainsKey(key))
+        {
+            d.Add(key, value);
+            return true;
+        }
+        return false;
+    }
+
+    bool addToList(List<Vector2> l, Vector2 v)
+    {
+        if (!l.Contains(v))
+        {
+            l.Add(v);
+            return true;
+        }
+        return false;
+    }
+    ////////////////////////////////////////
+    ////////////SORTING/////////////////////
+    ////////////////////////////////////////
+
+    void sortDict(Dictionary<Vector2, Vector2> dict, out Vector2[] output)
+    {
+        output = new Vector2[dict.Count*2];
+        List<Vector2> keysOrdered = dict.Keys.OrderByDescending(v => ((Vector2)this.transform.parent.InverseTransformPoint(v)).sqrMagnitude).ToList();
+        int index = 0;
+        foreach (Vector2 k in keysOrdered)
+        {
+            Vector2 aux = new Vector2();
+            dict.TryGetValue(k, out aux);
+            output[index++] = aux;
+        }
+        keysOrdered = dict.Keys.OrderBy(v => ((Vector2)this.transform.parent.InverseTransformPoint(v)).sqrMagnitude).ToList();
+        foreach (Vector2 k in keysOrdered)
+        {
+            output[index++] = k;
+        }
+    }
+
+    bool floatEquals(float f1, float f2)
+    {
+        return Mathf.Abs(f1 - f2) < epsilon;
     }
 
     void OnDrawGizmos()
     {
         if (lightArea != null && lightArea.Count > 0)
-            foreach (Vector2 v in lightArea)
+            foreach (Vector2 v in lightArea.Values.Union(lightArea.Keys))
                 Gizmos.DrawSphere(v + (Vector2)this.gameObject.transform.position, .1f);
         Gizmos.DrawSphere(this.gameObject.transform.position, .2f);
+    }
+
+    public void setSource(GameObject tsource)
+    {
+        this.source = tsource;
+    }
+
+    public bool isLocked()
+    {
+        return locked;
     }
 }
