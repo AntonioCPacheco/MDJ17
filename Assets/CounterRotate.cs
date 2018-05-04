@@ -11,6 +11,6 @@ public class CounterRotate : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
-        this.transform.RotateAround(this.transform.position, Vector3.forward, -this.transform.GetComponentInParent<Transform>().rotation.eulerAngles.z);
+        this.transform.RotateAround(this.transform.parent.position, Vector3.forward, -this.transform.parent.rotation.eulerAngles.z);
 	}
 }

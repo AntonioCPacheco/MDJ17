@@ -25,13 +25,16 @@ public class LightRenderer : MonoBehaviour {
         {
             corners = new Dictionary<KeyValuePair<float, Vector2>, Vector2>();
             pc2 = GetComponent<PolygonCollider2D>();
-            Transform w = GameObject.Find("Walls").transform;
+            Transform w = GameObject.Find("Objects").transform;
             List<PolygonCollider2D> v = new List<PolygonCollider2D>();
             for(int i=0; i<w.childCount; i++)
             {
-                if (w.GetChild(i).name.StartsWith("Mirror") || w.GetChild(i).name.StartsWith("Wall")) {
+                if (w.GetChild(i).name.StartsWith("SuperMirror")) {
+                    v.Add(w.GetChild(i).FindChild("Mirror").GetComponent<PolygonCollider2D>());
+                }
+                if (w.GetChild(i).name.StartsWith("Wall"))
+                {
                     v.Add(w.GetChild(i).GetComponent<PolygonCollider2D>());
-                    if(w.GetChild(i).name.StartsWith("Mirror")) v.Add(w.GetChild(i).FindChild("Mirror-OutterEdges").GetComponent<PolygonCollider2D>());
                 }
             }
             pcs = v.ToArray();
@@ -65,9 +68,9 @@ public class LightRenderer : MonoBehaviour {
                     if (hitMain.collider != null && !corners.ContainsKey(hitKey))
                     {
                         corners.Add(hitKey, hitMain.point - lightPosition);
-                        if (hitMain.collider.GetComponent<ReflectionManager>() != null)
+                        if (hitMain.collider.GetComponent<Reflect>() != null)
                         {
-                            hitMain.collider.GetComponent<ReflectionManager>().Triggered(g, lightPosition, hitMain.point);
+                            hitMain.collider.GetComponent<Reflect>().ReceiveLight(hitMain.point - lightPosition, hitMain.point, hitMain.normal, this.gameObject);
                         }
                     }
 
@@ -75,18 +78,18 @@ public class LightRenderer : MonoBehaviour {
                     if (hitLeft.collider != null && !corners.ContainsKey(hitKey))
                     {
                         corners.Add(hitKey, hitLeft.point - lightPosition);
-                        if (hitLeft.collider.GetComponent<ReflectionManager>() != null)
+                        if (hitLeft.collider.GetComponent<Reflect>() != null)
                         {
-                            hitLeft.collider.GetComponent<ReflectionManager>().Triggered(g, lightPosition, hitLeft.point);
+                            hitLeft.collider.GetComponent<Reflect>().ReceiveLight(hitLeft.point - lightPosition, hitLeft.point, hitLeft.normal, this.gameObject);
                         }
                     }
 
                     hitKey = new KeyValuePair<float, Vector2>(realAngle(lightPosition, hitRight.point), hitRight.point);
                     if (hitRight.collider != null && !corners.ContainsKey(hitKey)) {
                         corners.Add(hitKey, hitRight.point - lightPosition);
-                        if (hitRight.collider.GetComponent<ReflectionManager>() != null)
+                        if (hitRight.collider.GetComponent<Reflect>() != null)
                         {
-                            hitRight.collider.GetComponent<ReflectionManager>().Triggered(g, lightPosition, hitRight.point);
+                            hitRight.collider.GetComponent<Reflect>().ReceiveLight(hitRight.point - lightPosition, hitRight.point, hitRight.normal, this.gameObject);
                         }
                     }
                 }
@@ -118,14 +121,14 @@ public class LightRenderer : MonoBehaviour {
     {
         return Mathf.Atan2(to.y - from.y, to.x - from.x) * Mathf.Rad2Deg;
     }
-
+    /*
     void OnDrawGizmos()
     {
         if(corners!=null)
         foreach(Vector2 v in corners.Values)
             Gizmos.DrawSphere(v + (Vector2)this.gameObject.transform.position, .1f);
         Gizmos.DrawSphere(this.gameObject.transform.position, .2f);
-    }
+    }*/
 
 
     public void QuicksortAngles(KeyValuePair<float, Vector2>[] elements, int left, int right)
@@ -187,45 +190,4 @@ public class LightRenderer : MonoBehaviour {
         }
         return res;
     }
-    /*
-    //Returns 1 if first comes before second in clockwise order.
-    //Returns -1 if second comes before first.
-    //Returns 0 if the points are identical.
-    public static int IsClockwise(Vector2 first, Vector2 second, Vector2 origin)
-    {
-        if (first == second)
-            return 0;
-
-        Vector2 firstOffset = first - origin;
-        Vector2 secondOffset = second - origin;
-        float angle1 = Mathf.Atan2(firstOffset.x, firstOffset.y);
-        float angle2 = Mathf.Atan2(secondOffset.x, secondOffset.y);
-
-        if (angle1 < angle2)
-            return -1;
-        if (angle1 > angle2)
-            return 1;
-
-        // Check to see which point is closest
-        return (firstOffset.sqrMagnitude < secondOffset.sqrMagnitude) ? -1 : 1;
-    }
-
-    void OnTriggerEnter2D(Collider2D coll)
-    {
-        Debug.Log("New Collision Entsdaer with:" + coll.gameObject.name);
-        if (LayerMask.Equals(coll.gameObject.layer, LayerMask.NameToLayer("Switches")))
-        {
-            coll.gameObject.GetComponent<Switch_Behaviour>().setTriggered(true);
-            Debug.Log("New Collision Enter with:" + coll.gameObject.name);
-        }
-    }
-
-    void OnTriggerExit2D(Collider2D coll)
-    {
-        if (LayerMask.Equals(coll.gameObject.layer, LayerMask.NameToLayer("Switches")))
-        {
-            coll.gameObject.GetComponent<Switch_Behaviour>().setTriggered(false);
-            Debug.Log("New Collision Exit with:" + coll.gameObject.name);
-        }
-    }*/
 }

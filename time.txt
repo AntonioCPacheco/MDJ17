@@ -1,3 +1,0 @@
-You took: 7.802918 seconds!
-You took: 121.3631 seconds!
-You took: 199.6311 seconds!

@@ -26,12 +26,10 @@ public class mirrorMove : MonoBehaviour
     {
         if (mode == 0)
         {
-            this.GetComponent<Rigidbody2D>().constraints = RigidbodyConstraints2D.FreezeRotation;
 
         }
         else if (mode == 1)
         {
-            this.GetComponent<Rigidbody2D>().constraints = RigidbodyConstraints2D.None;
 
             if (beingPushed == false)
             {

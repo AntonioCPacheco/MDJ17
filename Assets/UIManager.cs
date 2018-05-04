@@ -40,11 +40,9 @@ public class UIManager : MonoBehaviour
             hideDeath();
             player = GameObject.FindGameObjectWithTag("Player");
         }
-        else
-        {
             mainMenuBackground = GameObject.Find("MainMenuBackground");
             mainMenuBackground.SetActive(false);
-        }
+        
     }
 
     // Update is called once per frame
@@ -183,6 +181,8 @@ public class UIManager : MonoBehaviour
         //Debug.Log("CONTROLS");
         //if (!SceneManager.GetActiveScene().name.Equals("MainMenu"))
         //{
+        if(GameObject.Find("Logo")!=null)
+            GameObject.Find("Logo").SetActive(false);
         foreach (GameObject g in pauseObjects)
         {
             if (g.name.Contains("Button"))

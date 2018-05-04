@@ -8,7 +8,6 @@ public class Door_Behavior : MonoBehaviour {
     public Transform[] switches;
     public Material OpenM;
     public Material ClosedM;
-    bool changed = false;
     bool opened = false;
 	// Use this for initialization
 	void Start () {
@@ -20,18 +19,15 @@ public class Door_Behavior : MonoBehaviour {
         bool open = true;
         foreach (Transform t in switches)
         {
-            if (!t.GetComponent<Switch_Behaviour>().triggered)
+            if (!t.GetComponent<Switch_Behaviour>().isActivated())
             {
                 open = false;
                 break;
             }
         }
-        if (!changed && open) { 
-            this.GetComponent<Renderer>().material = open ? OpenM : ClosedM;
-            opened = open;
-            changed = true;
-        }
-	}
+        this.GetComponent<Renderer>().material = open ? OpenM : ClosedM;
+        opened = open;
+    }
 
     public bool isOpen()
     {
@@ -42,13 +38,11 @@ public class Door_Behavior : MonoBehaviour {
     {
         if (other.gameObject.name.Equals("player") && opened)
         {
-            string name = "nope";
+            string name = "MainMenu";
             if (SceneManager.GetActiveScene().name.Equals("First Level"))
                 name = "Second Level";
             else if (SceneManager.GetActiveScene().name.Equals("Second Level"))
                 name = "Third Level";
-            else
-                Application.Quit();
 
             GameObject.Find("player").GetComponent<LevelManager>().saveTime();
             GameObject.Find("UIManager").GetComponent<UIManager>().LoadLevel(name);

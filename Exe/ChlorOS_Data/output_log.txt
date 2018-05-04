@@ -1,0 +1,53 @@
+Initialize engine version: 5.5.2f1 (3829d7f588f3)
+GfxDevice: creating device client; threaded=1
+Direct3D:
+    Version:  Direct3D 11.0 [level 11.0]
+    Renderer: NVIDIA GeForce GTX 770M (ID=0x11e0)
+    Vendor:   NVIDIA
+    VRAM:     3040 MB
+    Driver:   22.21.13.8233
+Begin MonoManager ReloadAssembly
+Platform assembly: D:\GitHub\MDJ17\Exe\ChlorOS_Data\Managed\UnityEngine.dll (this message is harmless)
+Loading D:\GitHub\MDJ17\Exe\ChlorOS_Data\Managed\UnityEngine.dll into Unity Child Domain
+Platform assembly: D:\GitHub\MDJ17\Exe\ChlorOS_Data\Managed\Assembly-CSharp.dll (this message is harmless)
+Loading D:\GitHub\MDJ17\Exe\ChlorOS_Data\Managed\Assembly-CSharp.dll into Unity Child Domain
+Platform assembly: D:\GitHub\MDJ17\Exe\ChlorOS_Data\Managed\UnityEngine.UI.dll (this message is harmless)
+Loading D:\GitHub\MDJ17\Exe\ChlorOS_Data\Managed\UnityEngine.UI.dll into Unity Child Domain
+Platform assembly: D:\GitHub\MDJ17\Exe\ChlorOS_Data\Managed\UnityEngine.Networking.dll (this message is harmless)
+Loading D:\GitHub\MDJ17\Exe\ChlorOS_Data\Managed\UnityEngine.Networking.dll into Unity Child Domain
+Platform assembly: D:\GitHub\MDJ17\Exe\ChlorOS_Data\Managed\UnityEngine.PlaymodeTestsRunner.dll (this message is harmless)
+Loading D:\GitHub\MDJ17\Exe\ChlorOS_Data\Managed\UnityEngine.PlaymodeTestsRunner.dll into Unity Child Domain
+- Completed reload, in  0.024 seconds
+Platform assembly: D:\GitHub\MDJ17\Exe\ChlorOS_Data\Managed\System.Core.dll (this message is harmless)
+Platform assembly: D:\GitHub\MDJ17\Exe\ChlorOS_Data\Managed\System.dll (this message is harmless)
+desktop: 1920x1080 60Hz; virtual: 3840x1080 at 0,0
+<RI> Initializing input.
+<RI> Input initialized.
+<RI> Initialized touch support.
+UnloadTime: 1.849173 ms
+Unloading 4 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 2.091652 ms
+
+Unloading 2 unused Assets to reduce memory usage. Loaded Objects now: 306.
+Total: 0.242479 ms (FindLiveObjects: 0.035922 ms CreateObjectMapping: 0.014540 ms MarkObjects: 0.188595 ms  DeleteObjects: 0.003421 ms)
+
+Unloading 4 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 0.315180 ms
+
+Unloading 5 unused Assets to reduce memory usage. Loaded Objects now: 472.
+Total: 0.302778 ms (FindLiveObjects: 0.030363 ms CreateObjectMapping: 0.016678 ms MarkObjects: 0.246756 ms  DeleteObjects: 0.008553 ms)
+
+NullReferenceException: Object reference not set to an instance of an object
+  at UIManager.Start () [0x00000] in <filename unknown>:0 
+ 
+(Filename:  Line: -1)
+
+Unloading 2 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 0.887380 ms
+
+Unloading 363 unused Assets to reduce memory usage. Loaded Objects now: 306.
+Total: 0.978043 ms (FindLiveObjects: 0.035067 ms CreateObjectMapping: 0.041482 ms MarkObjects: 0.194154 ms  DeleteObjects: 0.706911 ms)
+
+Setting up 2 worker threads for Enlighten.
+  Thread -> id: 605c -> priority: 1 
+  Thread -> id: 1678 -> priority: 1 

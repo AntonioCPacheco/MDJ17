@@ -221,8 +221,6 @@ public class Mirror_Behaviour : MonoBehaviour {
 
     void getCorners()
     {
-        Vector2[] corners = GameObject.Find("Outter Limits").GetComponent<EdgeCollider2D>().points;
-
         float maxX = float.MinValue, maxY = maxX;
         float minX = float.MaxValue, minY = minX;
         foreach (Vector2 a in containingAreaDict.Values)

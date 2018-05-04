@@ -1,0 +1,23 @@
+//Beggining of first level
+Robotic Voice: "h.. hi.. hello? hey there!"
+Robotic Voice: "Well.. i can't say this looks very promising.."
+Robotic Voice: "Don't be scared! There are good news and bad news!"
+Robotic Voice: "The bad news are your ship crashed in an alien planet, plus, everyone you know, well.. knew, just died a horrifying death."
+Robotic Voice: "You were lucky enough to survive the crash, but the ship is powered down and if you leave that ray of light you will not survive."
+Robotic Voice: "Chances of success.. negative 1'000'000 %"
+Robotic Voice: "But wait! I said there were also good news!!"
+Robotic Voice: "That was a lie.. there aren't any.. You are pretty much Plarb, that means fu... fun! yeah, it means fun!"
+Robotic Voice: "I hope you remember how mirrors work.. good luck!"
+
+//Beggining of second level
+Robotic Voice: "You survived?! WOOOOW how the Plar did you pull that of?!"
+Robotic Voice: "Well, not that it matters, it's pretty much over from this point on.."
+Robotic Voice: "Pay attention to the switches, 'which switch' would be the 'switch which' will open the door?!"
+Robotic Voice: "ahahahahahah loving this earthling language! This sure switches things up.. AHAHAHAH briliant!"
+Robotic Voice: "My battery is almost depleeted, i need to rest, or maybe, i need to 'switch' my batteries! ahahahahah good luck!"
+
+
+//End of third level
+Robotic Voice: "Aparently i don't have a battery, I was just bored out of my artificial mind!"
+Robotic Voice: "I ask : Is this situation not dangerous enough to inspire you to be faster?!"
+Robotic Voice: "I feel like we need a sense of... urgency!"
